@@ -14,7 +14,7 @@ const Navigation = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-xl md:text-2xl font-bold text-primary">
-            🐾 PetConnect
+            🐾 Pawfect
           </Link>
 
           {/* Desktop Navigation */}
@@ -42,6 +42,14 @@ const Navigation = () => {
               }`}
             >
               Contact Us
+            </Link>
+            <Link
+              to="/evaluation"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive("/evaluation") ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              HCI Evaluation
             </Link>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Bell className="h-5 w-5" />
@@ -90,6 +98,15 @@ const Navigation = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Contact Us
+            </Link>
+            <Link
+              to="/evaluation"
+              className={`block py-2 text-sm font-medium transition-colors ${
+                isActive("/evaluation") ? "text-primary" : "text-muted-foreground"
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              HCI Evaluation
             </Link>
             <Link to="/login" onClick={() => setIsMenuOpen(false)}>
               <Button className="w-full">Login</Button>
