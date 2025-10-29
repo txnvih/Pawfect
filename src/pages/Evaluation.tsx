@@ -1,22 +1,235 @@
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Users, ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { CheckCircle2, Users, ClipboardList, Download, Save, Plus, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface HeuristicRating {
+  rating: string;
+  notes: string;
+  checked: boolean;
+}
+
+interface CognitiveStep {
+  completed: boolean;
+  notes: string;
+}
+
+interface UsabilityTest {
+  id: string;
+  participant: string;
+  scenario: string;
+  timeToComplete: string;
+  clicks: number;
+  success: boolean;
+  notes: string;
+}
 
 const Evaluation = () => {
+  const { toast } = useToast();
+  
+  // Heuristic Evaluation State
+  const [heuristics, setHeuristics] = useState<Record<number, HeuristicRating>>({
+    1: { rating: "good", notes: "Active navigation states clearly indicate current page location.", checked: false },
+    2: { rating: "excellent", notes: "Pet adoption terminology is familiar and intuitive.", checked: false },
+    3: { rating: "good", notes: "Clear navigation allows users to move freely between sections.", checked: false },
+    4: { rating: "excellent", notes: "Consistent design system with unified color palette.", checked: false },
+    5: { rating: "good", notes: "Form validation prevents submission of empty fields.", checked: false },
+    6: { rating: "excellent", notes: "Visual icons and clear labels reduce memory load.", checked: false },
+    7: { rating: "good", notes: "Quick search bar on homepage provides efficient access.", checked: false },
+    8: { rating: "excellent", notes: "Clean, warm design with purposeful use of space.", checked: false },
+    9: { rating: "good", notes: "Error messages are clear and descriptive.", checked: false },
+    10: { rating: "needs-improvement", notes: "Contact page provides support access.", checked: false },
+  });
+
+  // Cognitive Walkthrough State
+  const [cognitiveSteps, setCognitiveSteps] = useState<Record<string, CognitiveStep>>({
+    "task1-1": { completed: false, notes: "Clear hero image with pets immediately establishes purpose" },
+    "task1-2": { completed: false, notes: "Multiple entry points: search bar, Browse All Pets button" },
+    "task1-3": { completed: false, notes: "Click action is obvious on highlighted buttons" },
+    "task1-4": { completed: false, notes: "Grid layout makes scanning easy" },
+    "task2-1": { completed: false, notes: "Contact Us link visible in main navigation" },
+    "task2-2": { completed: false, notes: "Form is immediately visible with clear labels" },
+    "task2-3": { completed: false, notes: "Form fields are large and touch-friendly" },
+    "task2-4": { completed: false, notes: "Large Send Message button is obvious" },
+    "task3-1": { completed: false, notes: "Login button prominent in navigation" },
+    "task3-2": { completed: false, notes: "Don't have an account? Sign Up Here clearly visible" },
+    "task3-3": { completed: false, notes: "Form is simple with only essential fields" },
+    "task3-4": { completed: false, notes: "Social login options provide alternatives" },
+  });
+
+  // Usability Testing State
+  const [usabilityTests, setUsabilityTests] = useState<UsabilityTest[]>([]);
+  const [newTest, setNewTest] = useState<UsabilityTest>({
+    id: "",
+    participant: "",
+    scenario: "pet-discovery",
+    timeToComplete: "",
+    clicks: 0,
+    success: false,
+    notes: "",
+  });
+
+  const heuristicNames = [
+    "Visibility of System Status",
+    "Match Between System and Real World",
+    "User Control and Freedom",
+    "Consistency and Standards",
+    "Error Prevention",
+    "Recognition Rather Than Recall",
+    "Flexibility and Efficiency of Use",
+    "Aesthetic and Minimalist Design",
+    "Help Users Recognize, Diagnose, and Recover from Errors",
+    "Help and Documentation",
+  ];
+
+  const calculateProgress = (type: string) => {
+    if (type === "heuristic") {
+      const completed = Object.values(heuristics).filter(h => h.checked).length;
+      return (completed / 10) * 100;
+    }
+    if (type === "cognitive") {
+      const completed = Object.values(cognitiveSteps).filter(s => s.completed).length;
+      return (completed / 12) * 100;
+    }
+    return 0;
+  };
+
+  const updateHeuristic = (index: number, field: keyof HeuristicRating, value: any) => {
+    setHeuristics(prev => ({
+      ...prev,
+      [index]: { ...prev[index], [field]: value }
+    }));
+  };
+
+  const updateCognitiveStep = (key: string, field: keyof CognitiveStep, value: any) => {
+    setCognitiveSteps(prev => ({
+      ...prev,
+      [key]: { ...prev[key], [field]: value }
+    }));
+  };
+
+  const addUsabilityTest = () => {
+    if (!newTest.participant || !newTest.timeToComplete) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in participant name and completion time.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setUsabilityTests(prev => [...prev, { ...newTest, id: Date.now().toString() }]);
+    setNewTest({
+      id: "",
+      participant: "",
+      scenario: "pet-discovery",
+      timeToComplete: "",
+      clicks: 0,
+      success: false,
+      notes: "",
+    });
+    
+    toast({
+      title: "Test Added",
+      description: "Usability test has been recorded.",
+    });
+  };
+
+  const deleteUsabilityTest = (id: string) => {
+    setUsabilityTests(prev => prev.filter(test => test.id !== id));
+  };
+
+  const saveEvaluation = () => {
+    const evaluation = {
+      heuristics,
+      cognitiveSteps,
+      usabilityTests,
+      timestamp: new Date().toISOString(),
+    };
+    
+    localStorage.setItem("pawfect-evaluation", JSON.stringify(evaluation));
+    
+    toast({
+      title: "Evaluation Saved",
+      description: "Your evaluation has been saved locally.",
+    });
+  };
+
+  const exportEvaluation = () => {
+    const evaluation = {
+      heuristics,
+      cognitiveSteps,
+      usabilityTests,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(evaluation, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pawfect-evaluation-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Evaluation Exported",
+      description: "Your evaluation has been downloaded.",
+    });
+  };
+
+  const getRatingBadge = (rating: string) => {
+    switch (rating) {
+      case "excellent":
+        return <Badge variant="default" className="bg-green-500">Excellent</Badge>;
+      case "good":
+        return <Badge variant="default">Good</Badge>;
+      case "needs-improvement":
+        return <Badge variant="secondary">Needs Improvement</Badge>;
+      case "poor":
+        return <Badge variant="destructive">Poor</Badge>;
+      default:
+        return <Badge variant="outline">Not Rated</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Navigation />
       
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
-            HCI Evaluation Framework
-          </h1>
-          <p className="text-lg text-muted-foreground mb-12">
-            Comprehensive evaluation of Pawfect using industry-standard HCI techniques
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
+                HCI Evaluation Framework
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Interactive evaluation of Pawfect using industry-standard HCI techniques
+              </p>
+            </div>
+            <div className="flex gap-2 mt-4 md:mt-0">
+              <Button onClick={saveEvaluation} variant="outline">
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+              <Button onClick={exportEvaluation}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+            </div>
+          </div>
 
           <Tabs defaultValue="heuristic" className="space-y-8">
             <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 h-auto">
@@ -38,113 +251,70 @@ const Evaluation = () => {
             <TabsContent value="heuristic" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Nielsen's 10 Usability Heuristics</CardTitle>
-                  <CardDescription>
-                    Evaluation based on Jakob Nielsen's usability principles
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">1. Visibility of System Status</h3>
-                        <Badge variant="default">Good</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Active navigation states clearly indicate current page location. Toast notifications provide immediate feedback for user actions.
-                      </p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>Nielsen's 10 Usability Heuristics</CardTitle>
+                      <CardDescription>
+                        Evaluate based on Jakob Nielsen's usability principles
+                      </CardDescription>
                     </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">2. Match Between System and Real World</h3>
-                        <Badge variant="default">Excellent</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Pet adoption terminology is familiar and intuitive. Icons (paw prints, animals) align with user mental models.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">3. User Control and Freedom</h3>
-                        <Badge variant="default">Good</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Clear navigation allows users to move freely between sections. Mobile menu provides easy exit with X icon.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">4. Consistency and Standards</h3>
-                        <Badge variant="default">Excellent</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Consistent design system with unified color palette, rounded corners, and button styles throughout all pages.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">5. Error Prevention</h3>
-                        <Badge variant="default">Good</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Form validation prevents submission of empty fields. Clear input placeholders guide users on expected input format.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">6. Recognition Rather Than Recall</h3>
-                        <Badge variant="default">Excellent</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Visual icons and clear labels reduce memory load. Pet cards display all relevant information at a glance.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">7. Flexibility and Efficiency of Use</h3>
-                        <Badge variant="default">Good</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Quick search bar on homepage provides efficient access. Direct navigation links serve both new and experienced users.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">8. Aesthetic and Minimalist Design</h3>
-                        <Badge variant="default">Excellent</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Clean, warm design with purposeful use of space. Warm orange tones create emotional connection without overwhelming users.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">9. Help Users Recognize, Diagnose, and Recover from Errors</h3>
-                        <Badge variant="default">Good</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Error messages are clear and descriptive. Toast notifications explain what went wrong and guide correction.
-                      </p>
-                    </div>
-
-                    <div className="border-l-4 border-primary pl-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">10. Help and Documentation</h3>
-                        <Badge variant="secondary">Needs Improvement</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Contact page provides support access. Could benefit from FAQ section or inline help tooltips for complex features.
-                      </p>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Progress</p>
+                      <p className="text-2xl font-bold text-primary">{Math.round(calculateProgress("heuristic"))}%</p>
                     </div>
                   </div>
+                  <Progress value={calculateProgress("heuristic")} className="mt-4" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <div key={num} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id={`heuristic-${num}`}
+                          checked={heuristics[num].checked}
+                          onCheckedChange={(checked) => updateHeuristic(num, "checked", checked)}
+                        />
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`heuristic-${num}`} className="text-base font-semibold cursor-pointer">
+                              {num}. {heuristicNames[num - 1]}
+                            </Label>
+                            {getRatingBadge(heuristics[num].rating)}
+                          </div>
+                          
+                          <RadioGroup
+                            value={heuristics[num].rating}
+                            onValueChange={(value) => updateHeuristic(num, "rating", value)}
+                            className="flex gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="excellent" id={`${num}-excellent`} />
+                              <Label htmlFor={`${num}-excellent`} className="cursor-pointer">Excellent</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="good" id={`${num}-good`} />
+                              <Label htmlFor={`${num}-good`} className="cursor-pointer">Good</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="needs-improvement" id={`${num}-needs`} />
+                              <Label htmlFor={`${num}-needs`} className="cursor-pointer">Needs Improvement</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="poor" id={`${num}-poor`} />
+                              <Label htmlFor={`${num}-poor`} className="cursor-pointer">Poor</Label>
+                            </div>
+                          </RadioGroup>
+                          
+                          <Textarea
+                            placeholder="Add your findings and notes here..."
+                            value={heuristics[num].notes}
+                            onChange={(e) => updateHeuristic(num, "notes", e.target.value)}
+                            className="min-h-20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -153,133 +323,115 @@ const Evaluation = () => {
             <TabsContent value="cognitive" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Task-Based User Journey Analysis</CardTitle>
-                  <CardDescription>
-                    Step-by-step evaluation of common user tasks
-                  </CardDescription>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>Task-Based User Journey Analysis</CardTitle>
+                      <CardDescription>
+                        Step-by-step evaluation of common user tasks
+                      </CardDescription>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Progress</p>
+                      <p className="text-2xl font-bold text-primary">{Math.round(calculateProgress("cognitive"))}%</p>
+                    </div>
+                  </div>
+                  <Progress value={calculateProgress("cognitive")} className="mt-4" />
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold text-primary">Task 1: Finding and Viewing a Pet</h3>
                     
-                    <div className="space-y-3 ml-4">
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">1</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User lands on homepage</p>
-                          <p className="text-sm text-muted-foreground">✓ Clear hero image with pets immediately establishes purpose</p>
-                          <p className="text-sm text-muted-foreground">✓ "Find Your Perfect Companion" headline is descriptive</p>
+                    {["task1-1", "task1-2", "task1-3", "task1-4"].map((key, idx) => (
+                      <div key={key} className="border rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id={key}
+                            checked={cognitiveSteps[key].completed}
+                            onCheckedChange={(checked) => updateCognitiveStep(key, "completed", checked)}
+                          />
+                          <div className="flex-1 space-y-3">
+                            <Label htmlFor={key} className="cursor-pointer font-medium">
+                              Step {idx + 1}: {
+                                idx === 0 ? "User lands on homepage" :
+                                idx === 1 ? "User identifies how to browse pets" :
+                                idx === 2 ? "User navigates to Browse page" :
+                                "User views available pets"
+                              }
+                            </Label>
+                            <Textarea
+                              placeholder="Add observations and findings..."
+                              value={cognitiveSteps[key].notes}
+                              onChange={(e) => updateCognitiveStep(key, "notes", e.target.value)}
+                              className="min-h-20"
+                            />
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">2</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User identifies how to browse pets</p>
-                          <p className="text-sm text-muted-foreground">✓ Multiple entry points: search bar, "Browse All Pets" button, and navigation menu</p>
-                          <p className="text-sm text-muted-foreground">✓ "Browse Pets" in navigation is self-explanatory</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">3</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User navigates to Browse page</p>
-                          <p className="text-sm text-muted-foreground">✓ Click action is obvious on highlighted buttons</p>
-                          <p className="text-sm text-muted-foreground">✓ Active state in navigation confirms successful navigation</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">4</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User views available pets</p>
-                          <p className="text-sm text-muted-foreground">✓ Grid layout makes scanning easy</p>
-                          <p className="text-sm text-muted-foreground">✓ Pet cards show key information (name, breed, age, location)</p>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold text-primary">Task 2: Contacting About a Pet</h3>
                     
-                    <div className="space-y-3 ml-4">
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">1</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User wants to inquire about a pet</p>
-                          <p className="text-sm text-muted-foreground">✓ "Contact Us" link visible in main navigation</p>
+                    {["task2-1", "task2-2", "task2-3", "task2-4"].map((key, idx) => (
+                      <div key={key} className="border rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id={key}
+                            checked={cognitiveSteps[key].completed}
+                            onCheckedChange={(checked) => updateCognitiveStep(key, "completed", checked)}
+                          />
+                          <div className="flex-1 space-y-3">
+                            <Label htmlFor={key} className="cursor-pointer font-medium">
+                              Step {idx + 1}: {
+                                idx === 0 ? "User wants to inquire about a pet" :
+                                idx === 1 ? "User navigates to contact page" :
+                                idx === 2 ? "User fills out form" :
+                                "User submits message"
+                              }
+                            </Label>
+                            <Textarea
+                              placeholder="Add observations and findings..."
+                              value={cognitiveSteps[key].notes}
+                              onChange={(e) => updateCognitiveStep(key, "notes", e.target.value)}
+                              className="min-h-20"
+                            />
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">2</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User navigates to contact page</p>
-                          <p className="text-sm text-muted-foreground">✓ Form is immediately visible with clear labels</p>
-                          <p className="text-sm text-muted-foreground">✓ Input placeholders guide what to enter</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">3</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User fills out form</p>
-                          <p className="text-sm text-muted-foreground">✓ Form fields are large and touch-friendly</p>
-                          <p className="text-sm text-muted-foreground">✓ Required fields are validated on submission</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">4</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User submits message</p>
-                          <p className="text-sm text-muted-foreground">✓ Large "Send Message" button is obvious</p>
-                          <p className="text-sm text-muted-foreground">✓ Success toast confirms message was sent</p>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold text-primary">Task 3: Creating an Account</h3>
                     
-                    <div className="space-y-3 ml-4">
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">1</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User wants to save favorite pets</p>
-                          <p className="text-sm text-muted-foreground">✓ "Login" button prominent in navigation</p>
+                    {["task3-1", "task3-2", "task3-3", "task3-4"].map((key, idx) => (
+                      <div key={key} className="border rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id={key}
+                            checked={cognitiveSteps[key].completed}
+                            onCheckedChange={(checked) => updateCognitiveStep(key, "completed", checked)}
+                          />
+                          <div className="flex-1 space-y-3">
+                            <Label htmlFor={key} className="cursor-pointer font-medium">
+                              Step {idx + 1}: {
+                                idx === 0 ? "User wants to save favorite pets" :
+                                idx === 1 ? "User realizes they need to sign up" :
+                                idx === 2 ? "User fills signup form" :
+                                "User completes signup"
+                              }
+                            </Label>
+                            <Textarea
+                              placeholder="Add observations and findings..."
+                              value={cognitiveSteps[key].notes}
+                              onChange={(e) => updateCognitiveStep(key, "notes", e.target.value)}
+                              className="min-h-20"
+                            />
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">2</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User realizes they need to sign up</p>
-                          <p className="text-sm text-muted-foreground">✓ "Don't have an account? Sign Up Here" clearly visible on login page</p>
-                          <p className="text-sm text-muted-foreground">✓ Link styling makes it clickable</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">3</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User fills signup form</p>
-                          <p className="text-sm text-muted-foreground">✓ Form is simple with only essential fields</p>
-                          <p className="text-sm text-muted-foreground">✓ Password confirmation prevents typos</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Badge className="h-6 w-6 rounded-full flex items-center justify-center">4</Badge>
-                        <div className="flex-1">
-                          <p className="font-medium">User completes signup</p>
-                          <p className="text-sm text-muted-foreground">✓ Social login options provide alternatives</p>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -289,162 +441,138 @@ const Evaluation = () => {
             <TabsContent value="usability" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Usability Testing Framework</CardTitle>
+                  <CardTitle>Add New Usability Test</CardTitle>
                   <CardDescription>
-                    Structured approach for evaluating real user interactions
+                    Record observations from user testing sessions
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Testing Objectives</h3>
-                    <ul className="space-y-2 list-disc list-inside text-muted-foreground">
-                      <li>Measure task completion rates for core user journeys</li>
-                      <li>Identify navigation pain points and confusion areas</li>
-                      <li>Evaluate visual hierarchy and information findability</li>
-                      <li>Assess mobile responsiveness and touch target accessibility</li>
-                      <li>Gather subjective satisfaction ratings</li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Test Scenarios</h3>
-                    <div className="space-y-4">
-                      <Card className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle className="text-base">Scenario 1: Pet Discovery</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm mb-3"><strong>Task:</strong> "You're looking to adopt a dog. Find and view available dogs on the site."</p>
-                          <p className="text-sm mb-2"><strong>Success Metrics:</strong></p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                            <li>Time to complete task (target: &lt;30 seconds)</li>
-                            <li>Number of clicks required (optimal: 1-2)</li>
-                            <li>Successful navigation to Browse page</li>
-                          </ul>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle className="text-base">Scenario 2: Information Request</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm mb-3"><strong>Task:</strong> "You found a pet you like. Send a message asking about adoption requirements."</p>
-                          <p className="text-sm mb-2"><strong>Success Metrics:</strong></p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                            <li>Task completion rate (target: 90%+)</li>
-                            <li>Form submission success without errors</li>
-                            <li>User understanding of next steps</li>
-                          </ul>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle className="text-base">Scenario 3: Account Creation</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm mb-3"><strong>Task:</strong> "Create an account to save your favorite pets."</p>
-                          <p className="text-sm mb-2"><strong>Success Metrics:</strong></p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                            <li>Signup page discovery rate</li>
-                            <li>Form completion time</li>
-                            <li>Error rate during registration</li>
-                          </ul>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle className="text-base">Scenario 4: Mobile Navigation</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm mb-3"><strong>Task:</strong> "Using a mobile device, navigate between Home, Browse, and Contact pages."</p>
-                          <p className="text-sm mb-2"><strong>Success Metrics:</strong></p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                            <li>Mobile menu discoverability</li>
-                            <li>Touch target adequacy (minimum 44x44px)</li>
-                            <li>Navigation speed and efficiency</li>
-                          </ul>
-                        </CardContent>
-                      </Card>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="participant">Participant Name/ID</Label>
+                      <Input
+                        id="participant"
+                        placeholder="e.g., Participant 1"
+                        value={newTest.participant}
+                        onChange={(e) => setNewTest({ ...newTest, participant: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="scenario">Test Scenario</Label>
+                      <select
+                        id="scenario"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2"
+                        value={newTest.scenario}
+                        onChange={(e) => setNewTest({ ...newTest, scenario: e.target.value })}
+                      >
+                        <option value="pet-discovery">Pet Discovery</option>
+                        <option value="contact-inquiry">Contact Inquiry</option>
+                        <option value="account-creation">Account Creation</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="time">Time to Complete (seconds)</Label>
+                      <Input
+                        id="time"
+                        type="number"
+                        placeholder="e.g., 45"
+                        value={newTest.timeToComplete}
+                        onChange={(e) => setNewTest({ ...newTest, timeToComplete: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="clicks">Number of Clicks</Label>
+                      <Input
+                        id="clicks"
+                        type="number"
+                        placeholder="e.g., 3"
+                        value={newTest.clicks}
+                        onChange={(e) => setNewTest({ ...newTest, clicks: parseInt(e.target.value) || 0 })}
+                      />
                     </div>
                   </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Data Collection Methods</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <Card className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle className="text-base">Quantitative Metrics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-sm text-muted-foreground">
-                          <ul className="space-y-1 list-disc list-inside">
-                            <li>Task completion rate (%)</li>
-                            <li>Time on task (seconds)</li>
-                            <li>Error frequency</li>
-                            <li>Click/tap counts</li>
-                            <li>Navigation path analysis</li>
-                          </ul>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle className="text-base">Qualitative Feedback</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-sm text-muted-foreground">
-                          <ul className="space-y-1 list-disc list-inside">
-                            <li>Think-aloud protocol observations</li>
-                            <li>Post-task satisfaction ratings (1-5)</li>
-                            <li>Open-ended feedback interviews</li>
-                            <li>SUS (System Usability Scale) score</li>
-                            <li>Pain point identification</li>
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="success"
+                      checked={newTest.success}
+                      onCheckedChange={(checked) => setNewTest({ ...newTest, success: checked as boolean })}
+                    />
+                    <Label htmlFor="success" className="cursor-pointer">Task completed successfully</Label>
                   </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Participant Requirements</h3>
-                    <Card className="bg-accent/50">
-                      <CardContent className="pt-6">
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li><strong>Sample Size:</strong> 5-8 participants per user group</li>
-                          <li><strong>Demographics:</strong> Mix of ages (25-65), tech comfort levels, and pet ownership experience</li>
-                          <li><strong>Devices:</strong> Test on both desktop and mobile devices</li>
-                          <li><strong>Browsers:</strong> Chrome, Safari, Firefox for compatibility testing</li>
-                          <li><strong>Environment:</strong> Quiet space with screen recording and audio capture</li>
-                        </ul>
-                      </CardContent>
-                    </Card>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Observations & Notes</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Record user behavior, comments, difficulties, and insights..."
+                      value={newTest.notes}
+                      onChange={(e) => setNewTest({ ...newTest, notes: e.target.value })}
+                      className="min-h-24"
+                    />
                   </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Expected Outcomes & Recommendations</h3>
-                    <div className="space-y-3">
-                      <Card className="bg-primary/5 border-l-4 border-primary">
-                        <CardContent className="pt-6">
-                          <p className="font-medium mb-2">Strong Areas (Expected)</p>
-                          <p className="text-sm text-muted-foreground">
-                            Visual appeal, navigation clarity, mobile responsiveness, and consistent design patterns should score highly based on current implementation.
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-secondary/5 border-l-4 border-secondary">
-                        <CardContent className="pt-6">
-                          <p className="font-medium mb-2">Areas for Improvement (Predicted)</p>
-                          <p className="text-sm text-muted-foreground">
-                            Consider adding: (1) pet filtering/sorting options, (2) detailed pet profiles with more photos, (3) saved favorites functionality, (4) inline help/FAQ, (5) adoption process timeline.
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
+                  
+                  <Button onClick={addUsabilityTest} className="w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Test Record
+                  </Button>
                 </CardContent>
               </Card>
+
+              {usabilityTests.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recorded Tests ({usabilityTests.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {usabilityTests.map((test) => (
+                      <div key={test.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold">{test.participant}</h4>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {test.scenario.replace("-", " ")}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteUsabilityTest(test.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Time</p>
+                            <p className="font-medium">{test.timeToComplete}s</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Clicks</p>
+                            <p className="font-medium">{test.clicks}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Status</p>
+                            <Badge variant={test.success ? "default" : "destructive"}>
+                              {test.success ? "Success" : "Failed"}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {test.notes && (
+                          <div className="bg-accent/50 rounded p-3">
+                            <p className="text-sm">{test.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
