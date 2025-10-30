@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,9 +12,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, Users, ClipboardList, Download, Save, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 
 interface HeuristicRating {
   rating: string;
@@ -39,20 +36,6 @@ interface UsabilityTest {
 
 const Evaluation = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [evaluatorName, setEvaluatorName] = useState("");
-  
-  useEffect(() => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to save evaluations.",
-        variant: "destructive",
-      });
-    }
-  }, [user, toast]);
   
   // Heuristic Evaluation State
   const [heuristics, setHeuristics] = useState<Record<number, HeuristicRating>>({
@@ -166,81 +149,20 @@ const Evaluation = () => {
     setUsabilityTests(prev => prev.filter(test => test.id !== id));
   };
 
-  const saveEvaluation = async () => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to save your evaluation.",
-        variant: "destructive",
-      });
-      navigate("/login");
-      return;
-    }
-
-    if (!evaluatorName.trim()) {
-      toast({
-        title: "Evaluator Name Required",
-        description: "Please enter your name before saving.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Save heuristic evaluation
-      const { error: heuristicError } = await supabase
-        .from("heuristic_evaluations")
-        .insert({
-          user_id: user.id,
-          evaluator_name: evaluatorName,
-          heuristics: heuristics as any,
-          overall_notes: "",
-        } as any);
-
-      if (heuristicError) throw heuristicError;
-
-      // Save cognitive walkthrough
-      const { error: cognitiveError } = await supabase
-        .from("cognitive_walkthroughs")
-        .insert({
-          user_id: user.id,
-          evaluator_name: evaluatorName,
-          tasks: cognitiveSteps as any,
-          overall_notes: "",
-        } as any);
-
-      if (cognitiveError) throw cognitiveError;
-
-      // Save usability tests if any exist
-      if (usabilityTests.length > 0) {
-        const { error: usabilityError } = await supabase
-          .from("usability_tests")
-          .insert({
-            user_id: user.id,
-            participant_info: { evaluator: evaluatorName } as any,
-            test_scenarios: usabilityTests.map(t => t.scenario) as any,
-            findings: usabilityTests as any,
-            overall_notes: "",
-          } as any);
-
-        if (usabilityError) throw usabilityError;
-      }
-
-      toast({
-        title: "Evaluation Saved",
-        description: "Your evaluation has been saved to the database.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Save Failed",
-        description: error.message || "Failed to save evaluation.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const saveEvaluation = () => {
+    const evaluation = {
+      heuristics,
+      cognitiveSteps,
+      usabilityTests,
+      timestamp: new Date().toISOString(),
+    };
+    
+    localStorage.setItem("pawfect-evaluation", JSON.stringify(evaluation));
+    
+    toast({
+      title: "Evaluation Saved",
+      description: "Your evaluation has been saved locally.",
+    });
   };
 
   const exportEvaluation = () => {
@@ -296,21 +218,11 @@ const Evaluation = () => {
               <p className="text-lg text-muted-foreground">
                 Interactive evaluation of Pawfect using industry-standard HCI techniques
               </p>
-              <div className="mt-4">
-                <Label htmlFor="evaluator-name">Evaluator Name</Label>
-                <Input
-                  id="evaluator-name"
-                  placeholder="Enter your name"
-                  value={evaluatorName}
-                  onChange={(e) => setEvaluatorName(e.target.value)}
-                  className="max-w-md mt-1"
-                />
-              </div>
             </div>
             <div className="flex gap-2 mt-4 md:mt-0">
-              <Button onClick={saveEvaluation} variant="outline" disabled={loading || !user}>
+              <Button onClick={saveEvaluation} variant="outline">
                 <Save className="mr-2 h-4 w-4" />
-                {loading ? "Saving..." : "Save to DB"}
+                Save
               </Button>
               <Button onClick={exportEvaluation}>
                 <Download className="mr-2 h-4 w-4" />

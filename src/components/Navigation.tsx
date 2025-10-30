@@ -1,20 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Bell, Menu, X, LogOut } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 
 const Navigation = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleLogout = async () => {
-    await signOut();
-    setIsMenuOpen(false);
-  };
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
@@ -61,21 +54,9 @@ const Navigation = () => {
             <Button variant="ghost" size="icon" className="rounded-full">
               <Bell className="h-5 w-5" />
             </Button>
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">
-                  {user.email}
-                </span>
-                <Button size="sm" variant="outline" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </div>
-            ) : (
-              <Link to="/login">
-                <Button size="sm">Login</Button>
-              </Link>
-            )}
+            <Link to="/login">
+              <Button size="sm">Login</Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -127,21 +108,9 @@ const Navigation = () => {
             >
               HCI Evaluation
             </Link>
-            {user ? (
-              <>
-                <div className="py-2 text-sm text-muted-foreground border-t">
-                  {user.email}
-                </div>
-                <Button className="w-full" variant="outline" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full">Login</Button>
-              </Link>
-            )}
+            <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+              <Button className="w-full">Login</Button>
+            </Link>
           </div>
         )}
       </div>

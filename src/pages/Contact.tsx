@@ -4,22 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 
 const Contact = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     message: "",
   });
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Basic validation
     if (!formData.name || !formData.email || !formData.message) {
       toast({
         title: "Error",
@@ -29,30 +26,12 @@ const Contact = () => {
       return;
     }
 
-    setLoading(true);
-
-    const { error } = await supabase.from("contact_submissions").insert({
-      name: formData.name,
-      email: formData.email,
-      message: formData.message,
-      user_id: user?.id || null,
+    toast({
+      title: "Message Sent!",
+      description: "We'll get back to you soon.",
     });
 
-    setLoading(false);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Message Sent!",
-        description: "We'll get back to you soon.",
-      });
-      setFormData({ name: "", email: "", message: "" });
-    }
+    setFormData({ name: "", email: "", message: "" });
   };
 
   return (
@@ -93,8 +72,8 @@ const Contact = () => {
               />
             </div>
 
-            <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : "Send Message"}
+            <Button type="submit" size="lg" className="w-full">
+              Send Message
             </Button>
           </form>
 
