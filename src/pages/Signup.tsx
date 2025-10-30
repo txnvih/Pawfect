@@ -1,21 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp, user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
@@ -36,12 +45,13 @@ const Signup = () => {
       return;
     }
 
-    toast({
-      title: "Account created!",
-      description: "Welcome to PetConnect.",
-    });
+    setLoading(true);
+    const { error } = await signUp(formData.email, formData.password, formData.name);
+    setLoading(false);
 
-    navigate("/");
+    if (!error) {
+      navigate("/");
+    }
   };
 
   return (
@@ -93,8 +103,8 @@ const Signup = () => {
               />
             </div>
 
-            <Button type="submit" size="lg" className="w-full">
-              Create Account
+            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 

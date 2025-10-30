@@ -1,36 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signIn, user } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
       return;
     }
 
-    toast({
-      title: "Welcome back!",
-      description: "You've successfully logged in.",
-    });
+    setLoading(true);
+    const { error } = await signIn(formData.email, formData.password);
+    setLoading(false);
 
-    navigate("/");
+    if (!error) {
+      navigate("/");
+    }
   };
 
   return (
@@ -70,8 +73,8 @@ const Login = () => {
               Forgot Password?
             </Button>
 
-            <Button type="submit" size="lg" className="w-full">
-              Log In
+            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+              {loading ? "Logging In..." : "Log In"}
             </Button>
           </form>
 
