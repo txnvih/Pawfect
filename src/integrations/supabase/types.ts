@@ -14,7 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cognitive_walkthroughs: {
+        Row: {
+          created_at: string | null
+          evaluation_date: string | null
+          evaluator_name: string
+          id: string
+          overall_notes: string | null
+          tasks: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          evaluation_date?: string | null
+          evaluator_name: string
+          id?: string
+          overall_notes?: string | null
+          tasks: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          evaluation_date?: string | null
+          evaluator_name?: string
+          id?: string
+          overall_notes?: string | null
+          tasks?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      heuristic_evaluations: {
+        Row: {
+          created_at: string | null
+          evaluation_date: string | null
+          evaluator_name: string
+          heuristics: Json
+          id: string
+          overall_notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          evaluation_date?: string | null
+          evaluator_name: string
+          heuristics: Json
+          id?: string
+          overall_notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          evaluation_date?: string | null
+          evaluator_name?: string
+          heuristics?: Json
+          id?: string
+          overall_notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      usability_tests: {
+        Row: {
+          created_at: string | null
+          findings: Json
+          id: string
+          overall_notes: string | null
+          participant_info: Json
+          test_date: string | null
+          test_scenarios: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          findings: Json
+          id?: string
+          overall_notes?: string | null
+          participant_info: Json
+          test_date?: string | null
+          test_scenarios: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          findings?: Json
+          id?: string
+          overall_notes?: string | null
+          participant_info?: Json
+          test_date?: string | null
+          test_scenarios?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
